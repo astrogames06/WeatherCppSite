@@ -8,15 +8,58 @@
 
     <style>
         body { margin: 0px; }
-        canvas.emscripten { border: 0px none; background-color: black; }
+        canvas.emscripten {
+            border: 0px none;
+            width: 90vw;
+            height: auto;
+            border-radius: 25px;
+        }
+        #canvas-container
+        {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
     </style>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     </head>
     <body>
-        <canvas class=emscripten id=canvas oncontextmenu=event.preventDefault() tabindex=-1></canvas>
+        <div id="canvas-container">
+            <canvas class=emscripten id=canvas oncontextmenu=event.preventDefault() tabindex=-1></canvas>
+        </div>
         <script>
             var Module = {
                 onRuntimeInitialized: function () {
                     console.log("onRuntimeInitialized RUN!");
+
+                    axios.get("https://get.geojs.io/v1/ip/geo.json") // Gets the current city the user is in
+                        .then(response => {
+                            let city = response.data.city;
+                            console.log("City:", city);
+                            Module.set_city(city);
+
+                            fetch(`https://wttr.in/${city}?format=j1`) // Gets the cities weather data
+                                .then(res => res.json())
+                                .then(data => { // This is where all the weather data is fed to the C++
+
+                                    // Weather description e.g Sunny, Snow, Rain
+                                    let weather_desc = data.current_condition[0].weatherDesc[0].value;
+                                    console.log("weather description: ", weather_desc);
+                                    Module.set_weather_desc(weather_desc);
+
+                                    // Temperature in celcius
+                                    let temperature = data.current_condition[0].temp_C;
+                                    console.log("Temperature: ", temperature);
+                                    Module.set_temperature(temperature);
+                                })
+                                .catch(error => console.log(error))
+                        })
+                        .catch(error => {
+                            console.error("Error fetching city:", error);
+                        });
+
+                    
                 },
                 canvas: (function() {
                     var canvas = document.getElementById('canvas');

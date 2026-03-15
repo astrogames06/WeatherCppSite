@@ -9,19 +9,48 @@
 #define RAYGUI_IMPLEMENTATION
 #include <raygui.h>
 
+#define PLATFORM_WEB
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
+	#include <emscripten/val.h>
+	#include <emscripten/bind.h>
 #endif
 
 
 const int WIDTH = 850;
 const int HEIGHT = 450;
+Color BG_COLOR = Color {0, 149, 194, 255};
+
+std::string city_global = "Loading...";
+void set_city(std::string city)
+{
+	city_global = city;
+}
+
+std::string weather_desc = "Loading...";
+void set_weather_desc(std::string weather_desc_inp)
+{
+	weather_desc = weather_desc_inp;
+}
+
+std::string temperature = "Loading...";
+void set_temperature(std::string temperature_inp)
+{
+	temperature = temperature_inp;
+}
+
+EMSCRIPTEN_BINDINGS(my_module)
+{
+	emscripten::function("set_city", &set_city);
+	emscripten::function("set_weather_desc", &set_weather_desc);
+	emscripten::function("set_temperature", &set_temperature);
+}
 
 void UpdateDrawFrame();
 
 int main(void)
 {
-	InitWindow(WIDTH, HEIGHT, "raylib [core] example - basic window");
+	InitWindow(WIDTH, HEIGHT, "Weather App");
 
 	#if defined(PLATFORM_WEB)
     	emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
@@ -45,14 +74,16 @@ void UpdateDrawFrame()
 {
 	BeginDrawing();
 	
-	ClearBackground(RAYWHITE);
+	ClearBackground(BG_COLOR);
 
-	DrawText("Raylib Game template!", 100, 100, 20, BLACK);
+	std::string city_str = "City: " + city_global;
+	DrawText(city_str.c_str(), 20, 20, 20, BLACK);
 
-	if (GuiButton({200, 200, 100, 30}, "#32# PRESS ME NOW!"))
-	{
-		std::cout << "Pressed!\n";
-	}
+	std::string weather_desc_str = "Weather: " + weather_desc;
+	DrawText(weather_desc_str.c_str(), 20, 50, 20, BLACK);
+
+	std::string temperature_str = "Temperature: " + temperature + "°C";
+	DrawText(temperature_str.c_str(), 20, 80, 20, BLACK);
 
 	EndDrawing();
 }
